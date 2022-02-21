@@ -51,6 +51,7 @@ import static org.apache.commons.lang3.StringUtils.substringAfter;
 import static org.apache.commons.lang3.StringUtils.substringBefore;
 import static org.springframework.http.HttpHeaders.CONTENT_ENCODING;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
+import static org.springframework.http.HttpHeaders.HOST;
 import static org.springframework.http.HttpHeaders.IF_MATCH;
 import static org.springframework.http.HttpHeaders.IF_NONE_MATCH;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
@@ -185,9 +186,14 @@ public class FileStoreController {
           APPLICATION_XML_VALUE
       }
   )
-  public ResponseEntity<ListAllMyBucketsResult> listBuckets() {
+  public ResponseEntity<ListAllMyBucketsResult> listBuckets(
+      @RequestHeader(value = HOST, required = false) final String host) {
+    LOG.info("Host Header: {}", host);
+
     return ResponseEntity.ok(new ListAllMyBucketsResult(TEST_OWNER, fileStore.listBuckets()));
   }
+
+
 
   //================================================================================================
   // /{bucketName:.+}
