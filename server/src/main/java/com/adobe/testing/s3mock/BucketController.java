@@ -16,6 +16,7 @@
 
 package com.adobe.testing.s3mock;
 
+import static com.adobe.testing.s3mock.BucketNameFilter.BUCKET_ATTRIBUTE;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_BUCKET_OBJECT_LOCK_ENABLED;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.CONTINUATION_TOKEN;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.ENCODING_TYPE;
@@ -37,6 +38,7 @@ import static com.adobe.testing.s3mock.util.AwsHttpParameters.VERSION_ID_MARKER;
 import static org.springframework.http.MediaType.APPLICATION_XML_VALUE;
 
 import com.adobe.testing.s3mock.dto.BucketLifecycleConfiguration;
+import com.adobe.testing.s3mock.dto.BucketName;
 import com.adobe.testing.s3mock.dto.ListAllMyBucketsResult;
 import com.adobe.testing.s3mock.dto.ListBucketResult;
 import com.adobe.testing.s3mock.dto.ListBucketResultV2;
@@ -51,6 +53,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -119,7 +122,10 @@ public class BucketController {
   )
   public ResponseEntity<Void> createBucket(@PathVariable final String bucketName,
       @RequestHeader(value = X_AMZ_BUCKET_OBJECT_LOCK_ENABLED,
-          required = false, defaultValue = "false") boolean objectLockEnabled) {
+          required = false, defaultValue = "false") boolean objectLockEnabled,
+      @RequestAttribute(BUCKET_ATTRIBUTE) BucketName bucket) {
+    //TODO: does subdomain access work for #createBucket in S3?
+    assert bucketName.equals(bucket.getName());
     bucketService.verifyBucketNameIsAllowed(bucketName);
     bucketService.verifyBucketDoesNotExist(bucketName);
     bucketService.createBucket(bucketName, objectLockEnabled);
@@ -143,7 +149,9 @@ public class BucketController {
       },
       method = RequestMethod.HEAD
   )
-  public ResponseEntity<Void> headBucket(@PathVariable final String bucketName) {
+  public ResponseEntity<Void> headBucket(@PathVariable final String bucketName,
+      @RequestAttribute(BUCKET_ATTRIBUTE) BucketName bucket) {
+    assert bucketName.equals(bucket.getName());
     bucketService.verifyBucketExists(bucketName);
     //return bucket region
     //return bucket location
@@ -169,7 +177,9 @@ public class BucketController {
           NOT_LIFECYCLE
       }
   )
-  public ResponseEntity<Void> deleteBucket(@PathVariable String bucketName) {
+  public ResponseEntity<Void> deleteBucket(@PathVariable String bucketName,
+      @RequestAttribute(BUCKET_ATTRIBUTE) BucketName bucket) {
+    assert bucketName.equals(bucket.getName());
     bucketService.verifyBucketExists(bucketName);
     bucketService.verifyBucketIsEmpty(bucketName);
     bucketService.deleteBucket(bucketName);
@@ -198,7 +208,9 @@ public class BucketController {
       produces = APPLICATION_XML_VALUE
   )
   public ResponseEntity<ObjectLockConfiguration> getObjectLockConfiguration(
-      @PathVariable String bucketName) {
+      @PathVariable String bucketName,
+      @RequestAttribute(BUCKET_ATTRIBUTE) BucketName bucket) {
+    assert bucketName.equals(bucket.getName());
     bucketService.verifyBucketExists(bucketName);
     var configuration = bucketService.getObjectLockConfiguration(bucketName);
     return ResponseEntity.ok(configuration);
@@ -226,7 +238,9 @@ public class BucketController {
   )
   public ResponseEntity<Void> putObjectLockConfiguration(
       @PathVariable String bucketName,
-      @RequestBody ObjectLockConfiguration configuration) {
+      @RequestBody ObjectLockConfiguration configuration,
+      @RequestAttribute(BUCKET_ATTRIBUTE) BucketName bucket) {
+    assert bucketName.equals(bucket.getName());
     bucketService.verifyBucketExists(bucketName);
     bucketService.setObjectLockConfiguration(bucketName, configuration);
     return ResponseEntity.ok().build();
@@ -254,7 +268,9 @@ public class BucketController {
       produces = APPLICATION_XML_VALUE
   )
   public ResponseEntity<BucketLifecycleConfiguration> getBucketLifecycleConfiguration(
-      @PathVariable String bucketName) {
+      @PathVariable String bucketName,
+      @RequestAttribute(BUCKET_ATTRIBUTE) BucketName bucket) {
+    assert bucketName.equals(bucket.getName());
     bucketService.verifyBucketExists(bucketName);
     var configuration = bucketService.getBucketLifecycleConfiguration(bucketName);
     return ResponseEntity.ok(configuration);
@@ -282,7 +298,9 @@ public class BucketController {
   )
   public ResponseEntity<Void> putBucketLifecycleConfiguration(
       @PathVariable String bucketName,
-      @RequestBody BucketLifecycleConfiguration configuration) {
+      @RequestBody BucketLifecycleConfiguration configuration,
+      @RequestAttribute(BUCKET_ATTRIBUTE) BucketName bucket) {
+    assert bucketName.equals(bucket.getName());
     bucketService.verifyBucketExists(bucketName);
     bucketService.setBucketLifecycleConfiguration(bucketName, configuration);
     return ResponseEntity.ok().build();
@@ -308,7 +326,9 @@ public class BucketController {
       }
   )
   public ResponseEntity<Void> deleteBucketLifecycleConfiguration(
-      @PathVariable String bucketName) {
+      @PathVariable String bucketName,
+      @RequestAttribute(BUCKET_ATTRIBUTE) BucketName bucket) {
+    assert bucketName.equals(bucket.getName());
     bucketService.verifyBucketExists(bucketName);
     bucketService.deleteBucketLifecycleConfiguration(bucketName);
     return ResponseEntity.noContent().build();
@@ -369,7 +389,9 @@ public class BucketController {
       @RequestParam(required = false) String delimiter,
       @RequestParam(required = false) String marker,
       @RequestParam(name = ENCODING_TYPE, required = false) String encodingType,
-      @RequestParam(name = MAX_KEYS, defaultValue = "1000", required = false) Integer maxKeys) {
+      @RequestParam(name = MAX_KEYS, defaultValue = "1000", required = false) Integer maxKeys,
+      @RequestAttribute(BUCKET_ATTRIBUTE) BucketName bucket) {
+    assert bucketName.equals(bucket.getName());
     bucketService.verifyBucketExists(bucketName);
     bucketService.verifyMaxKeys(maxKeys);
     bucketService.verifyEncodingType(encodingType);
@@ -410,7 +432,9 @@ public class BucketController {
       @RequestParam(name = ENCODING_TYPE, required = false) String encodingType,
       @RequestParam(name = START_AFTER, required = false) String startAfter,
       @RequestParam(name = MAX_KEYS, defaultValue = "1000", required = false) Integer maxKeys,
-      @RequestParam(name = CONTINUATION_TOKEN, required = false) String continuationToken) {
+      @RequestParam(name = CONTINUATION_TOKEN, required = false) String continuationToken,
+      @RequestAttribute(BUCKET_ATTRIBUTE) BucketName bucket) {
+    assert bucketName.equals(bucket.getName());
     bucketService.verifyBucketExists(bucketName);
     bucketService.verifyMaxKeys(maxKeys);
     bucketService.verifyEncodingType(encodingType);
