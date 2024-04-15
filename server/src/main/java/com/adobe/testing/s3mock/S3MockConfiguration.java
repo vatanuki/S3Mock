@@ -113,7 +113,7 @@ public class S3MockConfiguration implements WebMvcConfigurer {
 
   @Bean
   Filter bucketNameFilter(S3MockProperties properties) {
-    return new BucketNameFilter(properties.getContextPath());
+    return new BucketNameFilter(properties.contextPath());
   }
 
   @Override
