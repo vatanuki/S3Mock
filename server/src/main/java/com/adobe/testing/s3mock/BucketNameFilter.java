@@ -55,14 +55,14 @@ class BucketNameFilter extends OncePerRequestFilter {
         request.setAttribute(BUCKET_ATTRIBUTE, bucketName);
       }
     } finally {
-      LOG.info("Found bucketName {}", bucketName);
+      LOG.debug("Found bucketName {}", bucketName);
       filterChain.doFilter(request, response);
     }
   }
 
   private BucketName fromURI(HttpServletRequest request) {
     String requestURI = request.getRequestURI();
-    LOG.info("Check for bucket name in request URI={}.", requestURI);
+    LOG.debug("Check for bucket name in request URI={}.", requestURI);
     if (BUCKET_AND_KEY_PATTERN.matcher(requestURI).matches()
         || BUCKET_PATTERN.matcher(requestURI).matches()) {
       String bucketName = fromURIString(requestURI);
@@ -89,7 +89,7 @@ class BucketNameFilter extends OncePerRequestFilter {
 
   private BucketName fromHost(HttpServletRequest request) {
     String host = request.getHeader(HOST);
-    LOG.info("Check for bucket name in host={}.", host);
+    LOG.debug("Check for bucket name in host={}.", host);
     if (host == null || InetAddresses.isUriInetAddress(host)) {
       return null;
     }
