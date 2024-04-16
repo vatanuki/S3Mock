@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2024 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,7 +16,8 @@
 
 package com.adobe.testing.s3mock.dto;
 
-import static java.util.Objects.requireNonNull;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Key request value object.
@@ -28,12 +29,24 @@ import static java.util.Objects.requireNonNull;
  * By declaring "{*key}", Spring extracts the absolute path "/prefix/before/my/key", but in S3, all
  * keys within a bucket are relative to the bucket, in this example "prefix/before/my/key".
  */
-public record ObjectKey(String key) {
+public record ObjectKey(String key, List<String> keys) {
 
-  public ObjectKey {
-    requireNonNull(key);
-    if (key.startsWith("/")) {
-      key = key.substring(1);
+  public ObjectKey(String key) {
+    this(key, new ArrayList<String>());
+  }
+
+  public String key() {
+    if (!keys.isEmpty()) {
+      return keys.get(0);
     }
+    if (key.startsWith("/")) {
+      return key.substring(1);
+    }
+    return key;
+  }
+
+  public void updateKey(String key) {
+    this.keys.clear();
+    this.keys.add(key);
   }
 }

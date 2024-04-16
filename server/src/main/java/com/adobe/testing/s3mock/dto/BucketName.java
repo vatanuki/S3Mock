@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2022 Adobe.
+ *  Copyright 2017-2024 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -51,5 +51,13 @@ public class BucketName {
     return "BucketName{"
         + "name='" + name + '\''
         + '}';
+  }
+
+  public String applyVirtualHostedStyle(String bucket, ObjectKey key) {
+    if (bucket.equals(this.name)) {
+      return bucket;
+    }
+    key.updateKey(bucket + "/" + key.key());
+    return this.name;
   }
 }

@@ -16,6 +16,7 @@
 
 package com.adobe.testing.s3mock;
 
+import static com.adobe.testing.s3mock.BucketNameFilter.BUCKET_ATTRIBUTE;
 import static com.adobe.testing.s3mock.service.ObjectService.getChecksum;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.CONTENT_MD5;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.MetadataDirective.METADATA_DIRECTIVE_COPY;
@@ -64,6 +65,7 @@ import static org.springframework.http.HttpStatus.REQUESTED_RANGE_NOT_SATISFIABL
 import static org.springframework.http.MediaType.APPLICATION_XML_VALUE;
 
 import com.adobe.testing.s3mock.dto.AccessControlPolicy;
+import com.adobe.testing.s3mock.dto.BucketName;
 import com.adobe.testing.s3mock.dto.CopyObjectResult;
 import com.adobe.testing.s3mock.dto.CopySource;
 import com.adobe.testing.s3mock.dto.Delete;
@@ -102,6 +104,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -154,7 +157,11 @@ public class ObjectController {
   )
   public ResponseEntity<DeleteResult> deleteObjects(
       @PathVariable String bucketName,
+      @RequestAttribute(BUCKET_ATTRIBUTE) BucketName bucketAttribute,
       @RequestBody Delete body) {
+    if (!bucketName.equals(bucketAttribute.getName())) {
+      bucketName = bucketAttribute.getName();
+    }
     bucketService.verifyBucketExists(bucketName);
     //return version id
     return ResponseEntity.ok(objectService.deleteObjects(bucketName, body));
@@ -179,7 +186,9 @@ public class ObjectController {
   public ResponseEntity<Void> headObject(@PathVariable String bucketName,
       @PathVariable ObjectKey key,
       @RequestHeader(value = IF_MATCH, required = false) List<String> match,
-      @RequestHeader(value = IF_NONE_MATCH, required = false) List<String> noneMatch) {
+      @RequestHeader(value = IF_NONE_MATCH, required = false) List<String> noneMatch,
+      @RequestAttribute(BUCKET_ATTRIBUTE) BucketName bucketAttribute) {
+    bucketName = bucketAttribute.applyVirtualHostedStyle(bucketName, key);
     //TODO: needs modified-since handling, see API
     bucketService.verifyBucketExists(bucketName);
 
@@ -220,7 +229,9 @@ public class ObjectController {
       }
   )
   public ResponseEntity<Void> deleteObject(@PathVariable String bucketName,
-      @PathVariable ObjectKey key) {
+      @PathVariable ObjectKey key,
+      @RequestAttribute(BUCKET_ATTRIBUTE) BucketName bucketAttribute) {
+    bucketName = bucketAttribute.applyVirtualHostedStyle(bucketName, key);
     bucketService.verifyBucketExists(bucketName);
 
     var deleted = objectService.deleteObject(bucketName, key.key());
@@ -256,7 +267,9 @@ public class ObjectController {
       @RequestHeader(value = RANGE, required = false) HttpRange range,
       @RequestHeader(value = IF_MATCH, required = false) List<String> match,
       @RequestHeader(value = IF_NONE_MATCH, required = false) List<String> noneMatch,
+      @RequestAttribute(BUCKET_ATTRIBUTE) BucketName bucketAttribute,
       @RequestParam Map<String, String> queryParams) {
+    bucketName = bucketAttribute.applyVirtualHostedStyle(bucketName, key);
     //TODO: needs modified-since handling, see API
     bucketService.verifyBucketExists(bucketName);
 
@@ -306,10 +319,12 @@ public class ObjectController {
       },
       consumes = APPLICATION_XML_VALUE
   )
-  public ResponseEntity<Void> putObjectAcl(@PathVariable final String bucketName,
+  public ResponseEntity<Void> putObjectAcl(@PathVariable String bucketName,
       @PathVariable ObjectKey key,
       @RequestHeader(value = X_AMZ_ACL, required = false) ObjectCannedACL cannedAcl,
+      @RequestAttribute(BUCKET_ATTRIBUTE) BucketName bucketAttribute,
       @RequestBody(required = false) AccessControlPolicy body) {
+    bucketName = bucketAttribute.applyVirtualHostedStyle(bucketName, key);
     bucketService.verifyBucketExists(bucketName);
     objectService.verifyObjectExists(bucketName, key.key());
     AccessControlPolicy policy;
@@ -346,8 +361,10 @@ public class ObjectController {
       },
       produces = APPLICATION_XML_VALUE
   )
-  public ResponseEntity<AccessControlPolicy> getObjectAcl(@PathVariable final String bucketName,
-      @PathVariable ObjectKey key) {
+  public ResponseEntity<AccessControlPolicy> getObjectAcl(@PathVariable String bucketName,
+      @PathVariable ObjectKey key,
+      @RequestAttribute(BUCKET_ATTRIBUTE) BucketName bucketAttribute) {
+    bucketName = bucketAttribute.applyVirtualHostedStyle(bucketName, key);
     bucketService.verifyBucketExists(bucketName);
     objectService.verifyObjectExists(bucketName, key.key());
     var acl = objectService.getAcl(bucketName, key.key());
@@ -371,7 +388,9 @@ public class ObjectController {
       }
   )
   public ResponseEntity<Tagging> getObjectTagging(@PathVariable String bucketName,
-      @PathVariable ObjectKey key) {
+      @PathVariable ObjectKey key,
+      @RequestAttribute(BUCKET_ATTRIBUTE) BucketName bucketAttribute) {
+    bucketName = bucketAttribute.applyVirtualHostedStyle(bucketName, key);
     bucketService.verifyBucketExists(bucketName);
 
     var s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key());
@@ -400,7 +419,9 @@ public class ObjectController {
   )
   public ResponseEntity<Void> putObjectTagging(@PathVariable String bucketName,
       @PathVariable ObjectKey key,
+      @RequestAttribute(BUCKET_ATTRIBUTE) BucketName bucketAttribute,
       @RequestBody Tagging body) {
+    bucketName = bucketAttribute.applyVirtualHostedStyle(bucketName, key);
     bucketService.verifyBucketExists(bucketName);
 
     var s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key());
@@ -427,7 +448,9 @@ public class ObjectController {
       produces = APPLICATION_XML_VALUE
   )
   public ResponseEntity<LegalHold> getLegalHold(@PathVariable String bucketName,
-      @PathVariable ObjectKey key) {
+      @PathVariable ObjectKey key,
+      @RequestAttribute(BUCKET_ATTRIBUTE) BucketName bucketAttribute) {
+    bucketName = bucketAttribute.applyVirtualHostedStyle(bucketName, key);
     bucketService.verifyBucketExists(bucketName);
     bucketService.verifyBucketObjectLockEnabled(bucketName);
     var s3ObjectMetadata = objectService.verifyObjectLockConfiguration(bucketName, key.key());
@@ -453,7 +476,9 @@ public class ObjectController {
   )
   public ResponseEntity<Void> putLegalHold(@PathVariable String bucketName,
       @PathVariable ObjectKey key,
+      @RequestAttribute(BUCKET_ATTRIBUTE) BucketName bucketAttribute,
       @RequestBody LegalHold body) {
+    bucketName = bucketAttribute.applyVirtualHostedStyle(bucketName, key);
     bucketService.verifyBucketExists(bucketName);
     bucketService.verifyBucketObjectLockEnabled(bucketName);
 
@@ -479,7 +504,9 @@ public class ObjectController {
       produces = APPLICATION_XML_VALUE
   )
   public ResponseEntity<Retention> getObjectRetention(@PathVariable String bucketName,
-      @PathVariable ObjectKey key) {
+      @PathVariable ObjectKey key,
+      @RequestAttribute(BUCKET_ATTRIBUTE) BucketName bucketAttribute) {
+    bucketName = bucketAttribute.applyVirtualHostedStyle(bucketName, key);
     bucketService.verifyBucketExists(bucketName);
     bucketService.verifyBucketObjectLockEnabled(bucketName);
     var s3ObjectMetadata = objectService.verifyObjectLockConfiguration(bucketName, key.key());
@@ -505,7 +532,9 @@ public class ObjectController {
   )
   public ResponseEntity<Void> putObjectRetention(@PathVariable String bucketName,
       @PathVariable ObjectKey key,
+      @RequestAttribute(BUCKET_ATTRIBUTE) BucketName bucketAttribute,
       @RequestBody Retention body) {
+    bucketName = bucketAttribute.applyVirtualHostedStyle(bucketName, key);
     bucketService.verifyBucketExists(bucketName);
     bucketService.verifyBucketObjectLockEnabled(bucketName);
 
@@ -535,7 +564,9 @@ public class ObjectController {
       @PathVariable ObjectKey key,
       @RequestHeader(value = IF_MATCH, required = false) List<String> match,
       @RequestHeader(value = IF_NONE_MATCH, required = false) List<String> noneMatch,
-      @RequestHeader(value = X_AMZ_OBJECT_ATTRIBUTES) List<String> objectAttributes) {
+      @RequestHeader(value = X_AMZ_OBJECT_ATTRIBUTES) List<String> objectAttributes,
+      @RequestAttribute(BUCKET_ATTRIBUTE) BucketName bucketAttribute) {
+    bucketName = bucketAttribute.applyVirtualHostedStyle(bucketName, key);
     //TODO: needs modified-since handling, see API
     bucketService.verifyBucketExists(bucketName);
 
@@ -596,7 +627,9 @@ public class ObjectController {
       @RequestHeader(value = X_AMZ_STORAGE_CLASS, required = false, defaultValue = "STANDARD")
                                           StorageClass storageClass,
       @RequestHeader HttpHeaders httpHeaders,
+      @RequestAttribute(BUCKET_ATTRIBUTE) BucketName bucketAttribute,
       InputStream inputStream) {
+    bucketName = bucketAttribute.applyVirtualHostedStyle(bucketName, key);
     bucketService.verifyBucketExists(bucketName);
 
     var stream = objectService.verifyMd5(inputStream, contentMd5, sha256Header);
@@ -659,7 +692,9 @@ public class ObjectController {
       @RequestHeader(value = X_AMZ_COPY_SOURCE_IF_MATCH, required = false) List<String> match,
       @RequestHeader(value = X_AMZ_COPY_SOURCE_IF_NONE_MATCH,
           required = false) List<String> noneMatch,
-      @RequestHeader HttpHeaders httpHeaders) {
+      @RequestHeader HttpHeaders httpHeaders,
+      @RequestAttribute(BUCKET_ATTRIBUTE) BucketName bucketAttribute) {
+    bucketName = bucketAttribute.applyVirtualHostedStyle(bucketName, key);
     //TODO: needs modified-since handling, see API
 
     bucketService.verifyBucketExists(bucketName);
