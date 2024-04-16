@@ -62,6 +62,8 @@ public final class AwsHttpHeaders {
   public static final String X_AMZ_STORAGE_CLASS = "x-amz-storage-class";
   public static final String X_AMZ_ACL = "x-amz-acl";
 
+  public static final String X_AMZ_SIGNED_HEADERS = "X-Amz-SignedHeaders";
+
   private AwsHttpHeaders() {
     // private constructor for utility classes
   }

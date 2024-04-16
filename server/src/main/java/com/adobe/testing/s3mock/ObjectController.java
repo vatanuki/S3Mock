@@ -30,6 +30,7 @@ import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_COPY_SOURCE_IF_
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_DELETE_MARKER;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_METADATA_DIRECTIVE;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_OBJECT_ATTRIBUTES;
+import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_SIGNED_HEADERS;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_STORAGE_CLASS;
 import static com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_TAGGING;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.ACL;
@@ -628,9 +629,18 @@ public class ObjectController {
                                           StorageClass storageClass,
       @RequestHeader HttpHeaders httpHeaders,
       @RequestAttribute(BUCKET_ATTRIBUTE) BucketName bucketAttribute,
+      @RequestParam(value = X_AMZ_SIGNED_HEADERS, required = false, defaultValue = "")
+                                          String signedHeaders,
+      @RequestParam Map<String, String> queryParams,
       InputStream inputStream) {
     bucketName = bucketAttribute.applyVirtualHostedStyle(bucketName, key);
     bucketService.verifyBucketExists(bucketName);
+
+    for (String signedHeader : signedHeaders.split(";")) {
+      if (queryParams.containsKey(signedHeader)) {
+        httpHeaders.add(signedHeader, queryParams.get(signedHeader));
+      }
+    }
 
     var stream = objectService.verifyMd5(inputStream, contentMd5, sha256Header);
     //TODO: need to extract owner from headers
