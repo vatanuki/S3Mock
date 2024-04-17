@@ -29,6 +29,7 @@ import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_LIFECYCLE;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_LIST_TYPE;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_LOCATION;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_OBJECT_LOCK;
+import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_PREFIX;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_UPLOADS;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.NOT_VERSIONS;
 import static com.adobe.testing.s3mock.util.AwsHttpParameters.OBJECT_LOCK;
@@ -88,6 +89,9 @@ public class BucketController {
    */
   @GetMapping(
       value = "/",
+      params = {
+        NOT_PREFIX
+      },
       produces = APPLICATION_XML_VALUE
   )
   public ResponseEntity<ListAllMyBucketsResult> listBuckets() {
@@ -367,6 +371,7 @@ public class BucketController {
    */
   @GetMapping(
       value = {
+          "/",
           //AWS SDK V2 pattern
           "/{bucketName:.+}",
           //AWS SDK V1 pattern
@@ -383,21 +388,24 @@ public class BucketController {
       produces = APPLICATION_XML_VALUE
   )
   @Deprecated(since = "2.12.2", forRemoval = true)
-  public ResponseEntity<ListBucketResult> listObjects(
-      @PathVariable String bucketName,
+  public <T> T listObjects(
+      @PathVariable(required = false) String bucketName,
       @RequestParam(required = false) String prefix,
       @RequestParam(required = false) String delimiter,
       @RequestParam(required = false) String marker,
       @RequestParam(name = ENCODING_TYPE, required = false) String encodingType,
       @RequestParam(name = MAX_KEYS, defaultValue = "1000", required = false) Integer maxKeys,
-      @RequestAttribute(BUCKET_ATTRIBUTE) BucketName bucket) {
-    assert bucketName.equals(bucket.getName());
+      @RequestAttribute(name = BUCKET_ATTRIBUTE, required = false) BucketName bucket) {
+    if (bucket == null) {
+      return (T) listBuckets();
+    }
+    bucketName = bucket.getName();
     bucketService.verifyBucketExists(bucketName);
     bucketService.verifyMaxKeys(maxKeys);
     bucketService.verifyEncodingType(encodingType);
     var listBucketResult = bucketService.listObjectsV1(bucketName, prefix, delimiter,
         marker, encodingType, maxKeys);
-    return ResponseEntity.ok(listBucketResult);
+    return (T) ResponseEntity.ok(listBucketResult);
   }
 
   /**
@@ -415,6 +423,7 @@ public class BucketController {
    */
   @GetMapping(
       value = {
+          "/",
           //AWS SDK V2 pattern
           "/{bucketName:.+}",
           //AWS SDK V1 pattern
@@ -426,7 +435,7 @@ public class BucketController {
       produces = APPLICATION_XML_VALUE
   )
   public ResponseEntity<ListBucketResultV2> listObjectsV2(
-      @PathVariable String bucketName,
+      @PathVariable(required = false) String bucketName,
       @RequestParam(required = false) String prefix,
       @RequestParam(required = false) String delimiter,
       @RequestParam(name = ENCODING_TYPE, required = false) String encodingType,
@@ -434,7 +443,7 @@ public class BucketController {
       @RequestParam(name = MAX_KEYS, defaultValue = "1000", required = false) Integer maxKeys,
       @RequestParam(name = CONTINUATION_TOKEN, required = false) String continuationToken,
       @RequestAttribute(BUCKET_ATTRIBUTE) BucketName bucket) {
-    assert bucketName.equals(bucket.getName());
+    bucketName = bucket.getName();
     bucketService.verifyBucketExists(bucketName);
     bucketService.verifyMaxKeys(maxKeys);
     bucketService.verifyEncodingType(encodingType);

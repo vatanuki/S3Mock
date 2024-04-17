@@ -66,7 +66,9 @@ class BucketNameFilter extends OncePerRequestFilter {
     if (BUCKET_AND_KEY_PATTERN.matcher(requestURI).matches()
         || BUCKET_PATTERN.matcher(requestURI).matches()) {
       String bucketName = fromURIString(requestURI);
-      return new BucketName(bucketName);
+      if (bucketName != null) {
+        return new BucketName(bucketName);
+      }
     }
 
     return null;
@@ -80,7 +82,9 @@ class BucketNameFilter extends OncePerRequestFilter {
       if (firstElement.equals(contextPath) && uriComponents.length > 2) {
         bucketName = uriComponents[2];
       } else {
-        bucketName = firstElement;
+        if (!firstElement.equals(contextPath)) {
+          bucketName = firstElement;
+        }
       }
     }
 
@@ -90,7 +94,15 @@ class BucketNameFilter extends OncePerRequestFilter {
   private BucketName fromHost(HttpServletRequest request) {
     String host = request.getHeader(HOST);
     LOG.debug("Check for bucket name in host={}.", host);
-    if (host == null || InetAddresses.isUriInetAddress(host)) {
+    if (host == null) {
+      return null;
+    }
+
+    if (host.contains(":")) {
+      host = host.split(":")[0];
+    }
+
+    if (InetAddresses.isUriInetAddress(host)) {
       return null;
     }
 

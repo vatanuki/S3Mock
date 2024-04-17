@@ -146,6 +146,7 @@ public class ObjectController {
    */
   @PostMapping(
       value = {
+          "/",
           //AWS SDK V2 pattern
           "/{bucketName:.+}",
           //AWS SDK V1 pattern
@@ -157,12 +158,10 @@ public class ObjectController {
       produces = APPLICATION_XML_VALUE
   )
   public ResponseEntity<DeleteResult> deleteObjects(
-      @PathVariable String bucketName,
+      @PathVariable(required = false) String bucketName,
       @RequestAttribute(BUCKET_ATTRIBUTE) BucketName bucketAttribute,
       @RequestBody Delete body) {
-    if (!bucketName.equals(bucketAttribute.getName())) {
-      bucketName = bucketAttribute.getName();
-    }
+    bucketName = bucketAttribute.getName();
     bucketService.verifyBucketExists(bucketName);
     //return version id
     return ResponseEntity.ok(objectService.deleteObjects(bucketName, body));
