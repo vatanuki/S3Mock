@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -63,7 +63,10 @@ internal class CorsV2IT : S3TestBase() {
     )
     assertThat(putObjectResponse.statusLine.statusCode).isEqualTo(HttpStatus.SC_OK)
     assertThat(putObjectResponse.getFirstHeader("ETag").value).isEqualTo(expectedEtag)
-    assertThat(putObjectResponse.getFirstHeader("Access-Control-Allow-Origin").value).isEqualTo("*")
+    assertThat(putObjectResponse.getFirstHeader("Access-Control-Allow-Origin").value)
+      .isEqualTo("http://localhost/")
+    assertThat(putObjectResponse.getFirstHeader("Access-Control-Allow-Credentials").value)
+      .isEqualTo("true")
     assertThat(putObjectResponse.getFirstHeader("Access-Control-Expose-Headers").value).isEqualTo("*")
   }
 

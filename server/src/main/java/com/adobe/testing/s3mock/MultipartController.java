@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2024 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -73,7 +73,7 @@ import software.amazon.awssdk.utils.http.SdkHttpUtils;
 /**
  * Handles requests related to parts.
  */
-@CrossOrigin(origins = "*", exposedHeaders = "*")
+@CrossOrigin(originPatterns = "*", exposedHeaders = "*", allowCredentials = "true")
 @Controller
 @RequestMapping("${com.adobe.testing.s3mock.contextPath:}")
 public class MultipartController {
